@@ -1,0 +1,39 @@
+import os
+import speech_recognition as sr
+import sys
+import subprocess
+
+def main():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Say something!")
+        audio = r.listen(source)
+        texto = get_comando(r, audio)
+    comando=comandar(texto)
+    print(comando)
+    prompt(comando)
+
+def prompt(comando):   
+    subprocess.run([comando], check=True)
+    
+def comandar(texto):
+    match texto:
+        case "open calculator":
+            return "calc"
+        case "open doll":
+            return "start chrome"
+
+# obtain audio from the microphone
+def get_comando(r, audio):
+    try:
+        return r.recognize_google(audio)
+    except sr.UnknownValueError:
+        return "0"
+    except sr.RequestError:
+        return "1" 
+    
+
+
+
+if __name__ == "__main__":
+    main()
