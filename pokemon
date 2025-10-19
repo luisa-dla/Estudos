@@ -1,0 +1,54 @@
+import requests
+import tkinter as tk
+from tkinter import *
+from tkinter import ttk
+from PIL import Image, ImageTk
+from io import BytesIO
+
+def main():
+    janela = Tk()
+    janela.title("Pokedex")
+    janela.geometry("400x400")
+
+    titulo = tk.Label(janela, text = "Pokedex", font=("Arial", 18))
+    titulo.pack(padx=10)
+    instru = tk.Label(janela, text = "Digite o pokemon que deseja buscar:", font=("Arial", 10))
+    instru.pack()
+
+    entrada = tk.Entry(janela, width=30)
+    entrada.pack(padx=10, pady=10)
+        
+    
+    imagem_label = Label(janela)
+    imagem_label.pack(pady=10)
+    resultado = Label(janela, text="", font=("Arial", 12))
+    resultado.pack(pady=5)
+    submit_button = tk.Button(janela, text="Submit", command= lambda: get_pokemon(entrada, imagem_label, resultado))
+    submit_button.pack()
+    janela.mainloop()
+
+def get_pokemon(entrada, imagem_label, resultado):
+    nome = entrada.get().strip().lower()
+    url = f"https://pokeapi.co/api/v2/pokemon/{nome}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        sprite_url = data["sprites"]["other"]["official-artwork"]["front_default"]
+
+        if sprite_url:
+            img_response = requests.get(sprite_url)
+            img_data = Image.open(BytesIO(img_response.content))
+            img_data = img_data.resize((250, 250))  # Redimensiona
+            img_tk = ImageTk.PhotoImage(img_data)
+
+            # Atualiza a imagem e o texto
+            imagem_label.config(image=img_tk)
+            imagem_label.image = img_tk
+            resultado.config(text=f"{nome.capitalize()} encontrado!")
+        else:
+            resultado.config(text="Imagem não disponível.")
+    else:
+        resultado.config(text="Pokémon não encontrado!")
+
+if __name__ == "__main__":
+    main()
