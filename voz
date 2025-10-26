@@ -1,32 +1,92 @@
-import os
 import speech_recognition as sr
-import sys
 import subprocess
+import pyttsx3
+import tkinter as tk
+from tkinter import *
+from tkinter import ttk
+import sv_ttk
 
 def main():
+    janela = tk.Tk()
+    sv_ttk.set_theme("dark")
+    janela.title("Comando de voz")
+    janela.geometry("400x400")
+    titulo = tk.Label(janela, text = "Comando de voz para Windows", font=("Arial", 14))
+    titulo.pack(pady=20)
+    botao_inicio= ttk.Button(janela, text="Falar", style="TButton", command=coletar_fala)
+    botao_inicio.pack(pady=30)
+    botao_lista = ttk.Button(janela, text= "Ver lista de comandos aceitos", style="TButton", command=lambda: lista_de_comandos(janela))
+    botao_lista.pack()
+    janela.mainloop()
+
+def lista_de_comandos(janela):
+    lista_comandos = tk.Toplevel(janela)
+    lista_comandos.title("Lista de comandos aceitos")
+    lista_comandos.geometry("300x200")
+    label = tk.Label(lista_comandos, text= "Abrir navegador (abre o Google Chrome)\nAbrir calculadora\nAbrir texto (abre o Microsoft Word)\nAbrir arquivos (abre o explorador de arquivos)\nFechar calculadora\nFechar arquivos\nFechar navegador\nFechar texto" , justify="left")
+    label.pack(pady=20)
+    close_button = tk.Button(lista_comandos, text="Close", command=lista_comandos.destroy)
+    close_button.pack()
+
+def coletar_fala():
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Say something!")
+        fala("Pode falar!")
         audio = r.listen(source)
         texto = get_comando(r, audio)
-    comando=comandar(texto)
-    print(comando)
-    prompt(comando)
+    if texto == "0":
+        fala("Desculpe, não entendi.")
+    elif texto == "1":
+        fala("Tente novamente mais tarde.")
+    else:
+        fala(texto)
+        comando=comandar(texto)
+        if comando == "Erro":
+            fala("Desculpe, não entendi")
+        else:
+            prompt(comando)
+
+def fala(texto, voz_portugues=True, velocidade=180):
+    try:
+        engine = pyttsx3.init()
+        engine.setProperty('rate', velocidade)
+        if voz_portugues:
+            for voz in engine.getProperty('voices'):
+                if 'portuguese' in voz.name.lower() or 'brazil' in voz.name.lower():
+                    engine.setProperty('voice', voz.id)
+                    break
+        engine.say(texto)
+        engine.runAndWait()
+    except Exception as e:
+        print("Ocorreu um erro:", e)
 
 def prompt(comando):   
-    subprocess.run([comando], check=True)
+    subprocess.run(comando, shell= True, check=True)
     
 def comandar(texto):
-    match texto:
-        case "open calculator":
-            return "calc"
-        case "open doll":
-            return "start chrome"
+    match texto.lower():
+        case "abrir navegador":
+            return 'start chrome'
+        case "abrir calculadora":
+            return 'calc'
+        case "abrir texto":
+            return 'start winword'
+        case "abrir arquivos":
+            return 'start explorer'
+        case "fechar calculadora":
+            return 'taskkill /f /im CalculatorApp.exe'
+        case "fechar navegador":
+            return 'taskkill /im chrome.exe'
+        case "fechar texto":
+            return 'taskkill /im winword.exe'
+        case "fechar arquivos":
+            return 'taskkill /im explorer.exe'
+        case  _:
+            return "Erro"
 
-# obtain audio from the microphone
 def get_comando(r, audio):
     try:
-        return r.recognize_google(audio)
+        return r.recognize_google(audio, language="pt-BR")
     except sr.UnknownValueError:
         return "0"
     except sr.RequestError:
